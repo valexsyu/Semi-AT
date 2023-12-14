@@ -103,16 +103,12 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                                     sequence_label_ingnore = train_config.sequence_label_ingnore
                     )
                     if target_model is not None :
-                        if rank == 0:
-                            print("==========target_model generate==========")
                         with autocast():
                             target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits [:-1] ## remove last one logit
                         
                         target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc) 
 
-                with autocast():
-                    if rank == 0:
-                        print("==========approx model generate==========")                    
+                with autocast():                 
                     approx_output = approx_model(
                                         input_ids = insert_tokens,
                                         attention_mask = insert_mask,
@@ -123,9 +119,7 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                     approx_select_logits = approx_output.logits[insert_tokens != train_config.semi_at_insert_token_id,:]
                     approx_output_logp = F.log_softmax(approx_select_logits.logits, dim=-1)      
                     kl_loss = kl_div(approx_output_logp, target_ouptput_p)
-                
-                    print(kl_loss)
-                    print(approx_output.loss)
+
                     loss = kl_loss + approx_output.loss
                 else:
                     loss = approx_output.loss 
