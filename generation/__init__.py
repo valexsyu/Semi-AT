@@ -1,1 +1,1 @@
-from semi_at_model.semi_at_llama import *
+from generation.utils import GenerationSemiAT

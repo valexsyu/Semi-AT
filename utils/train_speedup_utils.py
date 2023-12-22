@@ -1,4 +1,3 @@
-
 import math
 import torch
 import random
@@ -170,7 +169,7 @@ class SemiATAttentionMaskConverter(AttentionMaskConverter):
 
 
 
-def insert_mask_token(
+def insert_semi_at_token(
     input_noise_ids: torch.LongTensor = None,
     input_ids: torch.LongTensor = None, 
     attention_mask: torch.Tensor = None, 

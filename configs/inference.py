@@ -53,7 +53,25 @@ class inference_kd_config():
     output_dir : str= "/work/valex1377/llama-nat/model_outputs/kd_data_tokenize_valid.txt"
     generate_data_num : int=200
     
+ 
+
+
+class SemiATGenerationConfig(GenerationConfig):
+    def __init__(self, **kwargs):            
+        super().__init__(**kwargs)
+        self.model_name = kwargs.pop("model_name", None) 
+        self.seed = kwargs.pop("seed", 42)
+        self.insert_token_num = kwargs.pop("insert_token_num", 1)
+        self.quantization = kwargs.pop("quantization", False)
+        self.dataset = kwargs.pop("quantization", False)
+        self.use_peft = kwargs.pop("use_peft", False)
+        self.peft_method = kwargs.pop("peft_method", "lora")
+        self.use_fast_kernels = kwargs.pop("use_fast_kernels", True) 
     
+    
+
+    
+
 
 
 

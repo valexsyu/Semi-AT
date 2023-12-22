@@ -3,3 +3,4 @@
 
 from .training import train_config
 from .inference import *
+from .inference import SemiATGenerationConfig

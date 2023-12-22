@@ -170,12 +170,12 @@ def main(**kwargs):
     
     
 
-    # Save the model
-    approx_model.save_pretrained("/work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM")
+    # # Save the model
+    # approx_model.save_pretrained("/work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM")
 
-    breakpoint()
-    # Assuming your tokenizer is named 'tokenizer'
-    tokenizer.save_pretrained("/work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM")
+    # breakpoint()
+    # # Assuming your tokenizer is named 'tokenizer'
+    # tokenizer.save_pretrained("/work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM")
 
     
     

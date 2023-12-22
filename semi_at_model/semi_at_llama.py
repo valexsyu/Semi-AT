@@ -170,9 +170,15 @@ class LlamaSemiATForCausalLM(LlamaForCausalLM, GenerationSemiAT):
     
     
     def prepare_inputs_for_generation(
-        self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
+        self, input_ids, insert_token_num=0, previous_same_sequences_length=None,
+        insert_token=None,
+        past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
     ):
         if past_key_values is not None:
+            # reuse the cache only the previous sequences is not change for semi at 
+            past_key_values = tuple([(layer[0][:, :, :previous_same_sequences_length, :],
+                                      layer[1][:, :, :previous_same_sequences_length, :]) for layer in past_key_values]) 
+            
             if isinstance(past_key_values, Cache):
                 cache_length = past_key_values.get_seq_length()
                 past_length = past_key_values.seen_tokens
@@ -192,6 +198,11 @@ class LlamaSemiATForCausalLM(LlamaForCausalLM, GenerationSemiAT):
             elif past_length < input_ids.shape[1]:
                 input_ids = input_ids[:, past_length:]
             # 3 - Otherwise (past_length >= input_ids.shape[1]), let's assume input_ids only has unprocessed tokens.
+
+            # add the insert token for smei at:
+            # input_ids and attention_mask
+            
+            
 
             # If we are about to go beyond the maximum cache length, we need to crop the input attention mask.
             if (
@@ -223,5 +234,15 @@ class LlamaSemiATForCausalLM(LlamaForCausalLM, GenerationSemiAT):
                 "attention_mask": attention_mask,
             }
         )
-        return model_inputs    
+        return model_inputs
+
+    @staticmethod
+    def _reorder_cache(past_key_values, beam_idx):
+        reordered_past = ()
+        for layer_past in past_key_values:
+            reordered_past += (
+                tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+            )
+        return reordered_past
+
     

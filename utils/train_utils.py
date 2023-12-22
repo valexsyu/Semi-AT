@@ -23,7 +23,7 @@ import torch.nn as nn
 
 from utils.train_speedup_utils import (
     inject_noise,
-    insert_mask_token,
+    insert_semi_at_token,
 )
 
 import torch.nn.functional as F
@@ -92,7 +92,7 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                         batch[key] = batch[key].to('cuda:0')
                 with torch.no_grad():
                     input_noise_ids = inject_noise(batch['input_ids'],tokenizer,train_config.noise_rate)
-                    insert_tokens , insert_mask, insert_labels, insert_position = insert_mask_token(
+                    insert_tokens , insert_mask, insert_labels, insert_position = insert_semi_at_token(
                                     input_noise_ids,
                                     batch['input_ids'],
                                     batch['attention_mask'], 
@@ -281,7 +281,7 @@ def evaluation(approx_model,train_config, eval_dataloader, local_rank, tokenizer
                     batch[key] = batch[key].to('cuda:0')
             with torch.no_grad():
                 input_noise_ids = inject_noise(batch['input_ids'],tokenizer,train_config.noise_rate)
-                insert_tokens , insert_mask, insert_labels, insert_position = insert_mask_token(
+                insert_tokens , insert_mask, insert_labels, insert_position = insert_semi_at_token(
                                 input_noise_ids,
                                 batch['input_ids'],
                                 batch['attention_mask'], 
