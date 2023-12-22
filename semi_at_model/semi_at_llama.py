@@ -10,8 +10,9 @@ from transformers.utils import (
     is_flash_attn_greater_or_equal_2_10,
     logging,
     replace_return_docstrings,
+    is_torch_fx_available,
 )
-from transformers.utils.import_utils import is_torch_fx_available
+from transformers.cache_utils import Cache
 from transformers.pytorch_utils import ALL_LAYERNORM_LAYERS, is_torch_greater_or_equal_than_1_13
 from utils.train_speedup_utils import _prepare_4d_causal_attention_mask_semi_at
 from generation.utils import GenerationSemiAT
