@@ -9,6 +9,8 @@ import torch
 
 from kd_datasets import (
     get_kd_dataset,
+    get_samsum_dataset,
+    get_alpaca_dataset,
 )
 
 
@@ -52,6 +54,8 @@ def get_custom_dataset(dataset_config, tokenizer, split: str):
 
 DATASET_PREPROC = {
     "kd_dataset": get_kd_dataset,
+    "samsum_dataset": get_samsum_dataset,
+    "alpaca_dataset" : get_alpaca_dataset,
 }
 
 
@@ -62,11 +66,19 @@ def get_preprocessed_dataset(
         raise NotImplementedError(f"{dataset_config.dataset} is not (yet) implemented")
 
     def get_split():
-        return (
-            dataset_config.train_split
-            if split == "train"
-            else dataset_config.test_split
-        )
+        if split ==  "train":
+            return dataset_config.train_split 
+        elif split == "validation":
+            return dataset_config.valid_split
+        elif split == "test": 
+            return dataset_config.test_split
+        else:
+            raise ValueError(f"please check the dataset config includle the file{split}")
+        # return (
+        #     dataset_config.train_split
+        #     if split == "train"
+        #     else dataset_config.test_split
+        # )
 
     return DATASET_PREPROC[dataset_config.dataset](
         dataset_config,

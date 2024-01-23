@@ -18,6 +18,7 @@ from transformers import (
     LlamaForCausalLM,
     LlamaTokenizer,
     LlamaConfig,
+    default_data_collator,
 )
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
@@ -30,10 +31,9 @@ from llama_recipes.utils import fsdp_auto_wrap_policy
 from llama_recipes.utils.config_utils import (
     update_config,
     generate_peft_config,
-    generate_dataset_config,
     get_dataloader_kwargs,
 )
-from llama_recipes.utils.dataset_utils import get_preprocessed_dataset
+from utils.dataset_utils import get_preprocessed_dataset
 
 from llama_recipes.utils.train_utils import (
     freeze_transformer_layers,
@@ -43,7 +43,8 @@ from llama_recipes.utils.train_utils import (
     print_model_size,
     get_policies
 )
-from utils.inference_utils import generate_kd
+from utils.inference_utils import inference_semi_at
+from utils.config_utils import generate_dataset_config
 from configs import SemiATGenerationConfig as INFERENCE_CONFIG
 from dataclasses import dataclass, asdict
 
@@ -57,12 +58,7 @@ def main(**kwargs):
     torch.cuda.manual_seed(inference_config.seed)
     torch.manual_seed(inference_config.seed)
     
-
-
-
-        
-    
-    target_model = LlamaSemiATForCausalLM.from_pretrained(
+    approx_model = LlamaSemiATForCausalLM.from_pretrained(
         inference_config.model_name,
         load_in_8bit=True if inference_config.quantization else None,
         device_map="auto" if inference_config.quantization else None,
@@ -72,37 +68,52 @@ def main(**kwargs):
     # Load the tokenizer and add special tokens
     tokenizer = LlamaTokenizer.from_pretrained(inference_config.model_name)
     
-    target_model.resize_token_embeddings(target_model.config.vocab_size + 2)  
-    breakpoint()
+    # Set the padding and eos.
+    inference_config.pad_token_id = tokenizer.pad_token_id
+    inference_config.bos_token_id = tokenizer.bos_token_id
+    inference_config.eos_token_id = tokenizer.eos_token_id
     
     
-    # tokenizer.add_special_tokens(
-    #         {
-    #             "mask_token": "<MASK>",
-    #             "pad_token": "<PAD>",
-    #         }
-    #     )
-    # target_model.resize_token_embeddings(target_model.config.vocab_size + 2)    
 
     # Prepare the model for int8 training if quantization is enabled
     if inference_config.quantization:
-        target_model = prepare_model_for_int8_training(target_model)
+        approx_model = prepare_model_for_int8_training(approx_model)
 
     if inference_config.use_peft:
         peft_config = generate_peft_config(inference_config, kwargs)
-        target_model = get_peft_model(target_model, peft_config)
+        approx_model = get_peft_model(approx_model, peft_config)
 
-    target_model.to("cuda")
+    approx_model.to("cuda")
     
-    inference_kwargs = asdict(inference_config)
-    inference_kwargs = remove_unused_kwargs(inference_kwargs)    
+    dataset_config = generate_dataset_config(inference_config, kwargs)
+
+     # Load and preprocess the dataset for testing
+    dataset_test = get_preprocessed_dataset(
+        tokenizer,
+        dataset_config,
+        split=inference_config.dataset_split,
+    )
+    test_sampler = None
+    # Create DataLoaders for the testing and validation dataset
+    test_dataloader = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=inference_config.batch_size_testing,
+        num_workers=inference_config.num_workers_dataloader,
+        pin_memory=True,
+        sampler=test_sampler if test_sampler else None,
+        drop_last=True,
+        collate_fn=default_data_collator,
+    )    
+  
+  
     
     # Start the training process
-    results = generate_kd(
-        target_model,
+    results = inference_semi_at(
+        approx_model,
         tokenizer,
+        test_dataloader,
         inference_config,
-        inference_kwargs,
+        kwargs,
     )
 
 

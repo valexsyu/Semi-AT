@@ -114,7 +114,7 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                                         attention_mask = insert_mask,
                                         position_ids = insert_position, 
                                         labels = insert_labels,                       
-                                        )                 
+                                        )       
                 if target_model is not None:
                     approx_select_logits = approx_output.logits[insert_tokens != train_config.semi_at_insert_token_id,:]
                     approx_output_logp = F.log_softmax(approx_select_logits.logits, dim=-1)      
@@ -146,6 +146,7 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
 
         epoch_end_time = time.perf_counter()-epoch_start_time
         epoch_times.append(epoch_end_time)
+        resutls = None
         # Reducing total_loss across all devices if there's more than one CUDA device
         if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
             dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)

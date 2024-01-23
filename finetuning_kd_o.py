@@ -90,36 +90,60 @@ def main(**kwargs):
         torch.cuda.set_device(local_rank)
         clear_gpu_cache(local_rank)
         setup_environ_flags(rank)
-
-    if train_config.initialize_llamasemiat :
-        use_cache = False if train_config.enable_fsdp else None
-        # Load the tokenizer and add special tokens
-        tokenizer = LlamaTokenizer.from_pretrained(train_config.llama_model, padding="max_length", truncation=True)
-        tokenizer.add_special_tokens(
-                {
-                    "mask_token": "<mask>",
-                    "pad_token": "<PAD>",
-                }
-            )        
-        approx_model = LlamaSemiATForCausalLM.from_pretrained(
-            train_config.llama_model,
-            load_in_8bit=True if train_config.quantization else None,
-            device_map="auto" if train_config.quantization else None,
-            use_cache=use_cache,
-        )      
-        approx_model.resize_token_embeddings(approx_model.config.vocab_size + 2)  
-        # if train_config.target_kldiv_loss_enable :  
-        #     target_model.resize_token_embeddings(target_model.config.vocab_size + 2)     
-        # # Save the model
-        approx_model.config._name_or_path = train_config.model_name
-        approx_model.save_pretrained(train_config.model_name)
-        # Assuming your tokenizer is named 'tokenizer'
-        tokenizer.save_pretrained(train_config.model_name)
-        # Load the tokenizer and add special tokens
-    
-    
-    
+    # try :
+    #     use_cache = False if train_config.enable_fsdp else None
+    #     # Load the tokenizer and add special tokens
+    #     tokenizer = LlamaTokenizer.from_pretrained(train_config.model_name, padding="max_length", truncation=True)
+    #     approx_model = LlamaSemiATForCausalLM.from_pretrained(
+    #         train_config.model_name,
+    #         load_in_8bit=True if train_config.quantization else None,
+    #         device_map="auto" if train_config.quantization else None,
+    #         use_cache=use_cache,
+    #     )              
+    #     add_number = 0
+    #     if tokenizer.pad_token_id is None:
+    #         tokenizer.add_special_tokens(
+    #             {
+    #                 "pad_token": "<PAD>",
+    #             }
+    #         )  
+    #         add_number += 1  
+    #     if tokenizer.mask_token_id is None:
+    #         tokenizer.add_special_tokens(
+    #             {
+    #                 "mask_token": "<mask>",
+    #             }
+    #         )      
+    #         add_number += 1 
+    #     approx_model.resize_token_embeddings(approx_model.config.vocab_size + add_number)      
+                   
+# except:
+    use_cache = False if train_config.enable_fsdp else None
+    # Load the tokenizer and add special tokens
+    tokenizer = LlamaTokenizer.from_pretrained(train_config.llama_model, padding="max_length", truncation=True)
+    tokenizer.add_special_tokens(
+            {
+                "mask_token": "<mask>",
+                "pad_token": "<PAD>",
+            }
+        )        
+    approx_model = LlamaSemiATForCausalLM.from_pretrained(
+        train_config.llama_model,
+        load_in_8bit=True if train_config.quantization else None,
+        device_map="auto" if train_config.quantization else None,
+        use_cache=use_cache,
+    )      
+    approx_model.resize_token_embeddings(approx_model.config.vocab_size + 2)  
+    if train_config.target_kldiv_loss_enable :  
+        target_model.resize_token_embeddings(target_model.config.vocab_size + 2)     
+    # # Save the model
+    approx_model.config._name_or_path = train_config.model_name
+    approx_model.save_pretrained(train_config.model_name)
+    # Assuming your tokenizer is named 'tokenizer'
+    tokenizer.save_pretrained(train_config.model_name)
+    # Load the tokenizer and add special tokens
     tokenizer = LlamaTokenizer.from_pretrained(train_config.model_name, padding="max_length", truncation=True)       
+    
     semi_at_insert_token_id = tokenizer.convert_tokens_to_ids('<mask>')
     update_config(train_config,**{"semi_at_insert_token_id":semi_at_insert_token_id})
     
@@ -142,13 +166,12 @@ def main(**kwargs):
         llama_config = LlamaConfig.from_pretrained(train_config.model_name)
         llama_config.use_cache = use_cache           
         if rank == 0:
-            if train_config.target_kldiv_loss_enable :
-                target_model = LlamaSemiATForCausalLM.from_pretrained(
-                    train_config.model_name,
-                    load_in_8bit=True if train_config.quantization else None,
-                    device_map="auto" if train_config.quantization else None,
-                    use_cache=use_cache,
-                )   
+            # target_model = LlamaForCausalLM.from_pretrained(
+            #     train_config.model_name,
+            #     load_in_8bit=True if train_config.quantization else None,
+            #     device_map="auto" if train_config.quantization else None,
+            #     use_cache=use_cache,
+            # )   
               
             approx_model = LlamaSemiATForCausalLM.from_pretrained(
                 train_config.model_name,
@@ -156,25 +179,29 @@ def main(**kwargs):
                 device_map="auto" if train_config.quantization else None,
                 use_cache=use_cache,
             )     
+                            
+              
+            
+            # approx_model = LlamaSemiATForCausalLM(llama_config, semi_at_insert_token_id)
+            # approx_model.load_state_dict(target_model.state_dict())             
+            print("====================Load Model Finish=========================") 
         else:
+             
             with torch.device("meta"):
-                # approx_model = LlamaSemiATForCausalLM(llama_config, semi_at_insert_token_id)
-                approx_model = LlamaSemiATForCausalLM.from_pretrained(
-                    train_config.model_name,
-                    load_in_8bit=True if train_config.quantization else None,
-                    device_map="auto" if train_config.quantization else None,
-                    use_cache=use_cache,
-                )                
+                # target_model = LlamaForCausalLM(llama_config)
+                approx_model = LlamaSemiATForCausalLM(llama_config, semi_at_insert_token_id)
+                # approx_model.load_state_dict(target_model.state_dict())   
                 
+            print("====================Load Model Finish=========================")    
+
     else:
         llama_config = LlamaConfig.from_pretrained(train_config.model_name)
-        if train_config.target_kldiv_loss_enable :
-            target_model = LlamaSemiATForCausalLM.from_pretrained(
-                train_config.model_name,
-                load_in_8bit=True if train_config.quantization else None,
-                device_map="auto" if train_config.quantization else None,
-                use_cache=use_cache,
-            )
+        # target_model = LlamaForCausalLM.from_pretrained(
+        #     train_config.model_name,
+        #     load_in_8bit=True if train_config.quantization else None,
+        #     device_map="auto" if train_config.quantization else None,
+        #     use_cache=use_cache,
+        # )
         
         approx_model = LlamaSemiATForCausalLM.from_pretrained(
             train_config.model_name,
@@ -190,6 +217,7 @@ def main(**kwargs):
     if not train_config.target_kldiv_loss_enable :
         target_model = None
         
+    print("====================Load Model Finish=========================")
     
     if train_config.enable_fsdp and train_config.use_fast_kernels:
         """

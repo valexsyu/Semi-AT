@@ -28,12 +28,22 @@
 #        /work/valex1377/llama/models_hf/7B-chat          
 
 
-python /work/valex1377/llama-nat/llama-recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-       /work/valex1377/llama-nat/model_outputs/KD_ft_b1_WoKLDiv_WiSeqloss \
-       /work/valex1377/llama-nat/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss \
-       /work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM  
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WiSeqloss \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss \
+#        /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM  
 
-# python /work/valex1377/llama-nat/llama-recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-#        /work/valex1377/llama-nat/model_outputs/KD_ft_b1_WoKLDiv_WoSeqloss \
-#        /work/valex1377/llama-nat/llama_model/models_hf/KD_ft_b1_WoKLDiv_WoSeqloss \
-#        /work/valex1377/llama-nat/model_outputs/LlamaSemiATForCausalLM
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WoSeqloss \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WoSeqloss \
+#        /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WoSeqloss \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WoSeqloss \
+#        /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM       
+
+python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+       /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WiSeqloss \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss \
+       /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM    

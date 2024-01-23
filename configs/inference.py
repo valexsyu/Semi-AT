@@ -24,7 +24,6 @@ class inference_config():
     more_step: int = 0
     result_file_prefix : str = ""
     return_dict_in_generate: bool=True
-    max_length: int=150
     max_new_tokens: int=100
     # num_beams: int = 5
     do_sample: bool = True   
@@ -50,7 +49,7 @@ class inference_kd_config():
     do_sample: bool = True   
     use_cache: bool = True    
     batch_size: int = 1
-    output_dir : str= "/work/valex1377/llama-nat/model_outputs/kd_data_tokenize_valid.txt"
+    output_dir : str= "/work/valex1377/semi_at_llama/model_outputs"
     generate_data_num : int=200
     
  
@@ -63,10 +62,17 @@ class SemiATGenerationConfig(GenerationConfig):
         self.seed = kwargs.pop("seed", 42)
         self.insert_token_num = kwargs.pop("insert_token_num", 1)
         self.quantization = kwargs.pop("quantization", False)
-        self.dataset = kwargs.pop("quantization", False)
+        self.dataset = kwargs.pop("dataset", "samsum_dataset")
         self.use_peft = kwargs.pop("use_peft", False)
         self.peft_method = kwargs.pop("peft_method", "lora")
         self.use_fast_kernels = kwargs.pop("use_fast_kernels", True) 
+        self.batch_size_testing = kwargs.pop("batch_size_testing", 1) 
+        self.num_workers_dataloader = kwargs.pop("num_workers_dataloader", 1) 
+        self.use_fp16 = kwargs.pop("use_fp16", False) 
+        self.dataset_split = kwargs.pop("dataset_split", "test") 
+        self.insert_token_id = kwargs.pop("insert_token_id", 0) 
+        self.max_new_tokens = kwargs.pop("max_new_tokens", 400) 
+        
     
     
 
