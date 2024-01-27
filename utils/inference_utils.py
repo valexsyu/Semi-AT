@@ -57,7 +57,45 @@ def creat_batch(size,bos) :
     }
 
 
-def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config, kwargs):
+
+def replace_unk(hypo_str, src_str, alignment, align_dict, unk):
+    from fairseq import tokenizer
+
+    # Tokens are strings here
+    hypo_tokens = tokenizer.tokenize_line(hypo_str)
+    # TODO: Very rare cases where the replacement is '<eos>' should be handled gracefully
+    src_tokens = tokenizer.tokenize_line(src_str) + ["<eos>"]
+    for i, ht in enumerate(hypo_tokens):
+        if ht == unk:
+            src_token = src_tokens[alignment[i]]
+            # Either take the corresponding value in the aligned dictionary or just copy the original value.
+            hypo_tokens[i] = align_dict.get(src_token, src_token)
+    return " ".join(hypo_tokens)
+
+def post_process_prediction(
+    hypo_tokens,
+    src_str,
+    alignment,
+    align_dict,
+    tgt_dict,
+    remove_bpe=None,
+    extra_symbols_to_ignore=None,
+):
+    hypo_str = tgt_dict.string(
+        hypo_tokens, remove_bpe, extra_symbols_to_ignore=extra_symbols_to_ignore
+    )
+    if align_dict is not None:
+        hypo_str = replace_unk(
+            hypo_str, src_str, alignment, align_dict, tgt_dict.unk_string()
+        )
+    if align_dict is not None or remove_bpe is not None:
+        # Convert back to tokens for evaluating with unk replacement or without BPE
+        # Note that the dictionary can be modified inside the method.
+        hypo_tokens = tgt_dict.encode_line(hypo_str, add_if_not_exist=True)
+    return hypo_tokens, hypo_str, alignment
+
+
+def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config, result_path , kwargs):
 
     autocast = torch.cuda.amp.autocast if inference_config.use_fp16 else nullcontext
     if inference_config.insert_token_num == 0 :
@@ -70,6 +108,10 @@ def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config
     approx_model.eval()
     pbar = tqdm(test_dataloader,colour="blue", desc=f"Testing num: ", total=len(test_dataloader), dynamic_ncols=True)
     for step, batch in enumerate(test_dataloader):    
+        if batch['labels'] is not None:
+            batch_labels = batch['labels']
+            batch.pop("labels",None)
+            
         
         epoch_start_time = time.perf_counter()
         for key in batch.keys():
@@ -77,10 +119,14 @@ def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config
         with torch.no_grad():
             outputs = approx_model.generate(**batch, generation_config=inference_config,streamer=streamer, 
                                             max_new_tokens=inference_config.max_new_tokens) 
+
             
-        epoch_end_time = time.perf_counter()-epoch_start_time               
+        epoch_end_time = time.perf_counter()-epoch_start_time  
         breakpoint()
-        print("==================================END============================================")
+        if result_path is not None:
+            for _,(tgt_sent,hyp_sent) in enumerate(zip(batch_labels, outputs.tolist())):
+                print("T-{}".format(tokenizer.decode((tgt_sent),skip_special_tokens=True)), file=result_path)  
+                print("H-{}".format(tokenizer.decode(hyp_sent,skip_special_tokens=True)), file=result_path)                  
     return results
 
 

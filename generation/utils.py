@@ -28,9 +28,11 @@ from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 setattr(GenerationMode, 'GREEDY_SEARCH_SEMI_AT', 'greedy_search_semi_at')
 logger = logging.get_logger(__name__)
 VALEX_DEBUG = True
+WATCH_TOKEN = True
 ## debug ##
 if VALEX_DEBUG :
     from transformers import LlamaTokenizer
+    TOKENIZER_PATH="/work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss"
 #########
 
 class GenerationSemiAT(GenerationMixin):
@@ -56,8 +58,10 @@ class GenerationSemiAT(GenerationMixin):
                     if generation_config.insert_token_num > 0 :
                         generation_mode = GenerationMode.GREEDY_SEARCH_SEMI_AT
                     else:
-                        # generation_mode = GenerationMode.GREEDY_SEARCH_SEMI_AT
-                        generation_mode = GenerationMode.GREEDY_SEARCH
+                        if generation_config.insert_waiting :
+                            generation_mode = GenerationMode.GREEDY_SEARCH_SEMI_AT
+                        else:
+                            generation_mode = GenerationMode.GREEDY_SEARCH
                     ##=========
             else:
                 generation_mode = GenerationMode.SAMPLE
@@ -677,6 +681,7 @@ class GenerationSemiAT(GenerationMixin):
                 streamer=streamer,
                 insert_token_num=generation_config.insert_token_num,
                 insert_token_id=generation_config.insert_token_id,
+                insert_waiting=generation_config.insert_waiting,
                 **model_kwargs,
             ) 
             
@@ -698,6 +703,7 @@ class GenerationSemiAT(GenerationMixin):
         streamer: Optional["BaseStreamer"] = None,
         insert_token_num: int = 0,
         insert_token_id: int = None,
+        insert_waiting: bool = False,
         **model_kwargs,
     ) -> Union[GreedySearchOutput, torch.LongTensor]:
         r"""
@@ -847,11 +853,13 @@ class GenerationSemiAT(GenerationMixin):
             previous_same_part_sequences = input_ids
             previous_sequences = input_ids
             origional_prefix = input_ids.shape[1]
-            iter_num = 0
         # previous_sequences = None
         ## debug ##
         if VALEX_DEBUG :
-            tokenizer = LlamaTokenizer.from_pretrained("/work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss")   
+            tokenizer = LlamaTokenizer.from_pretrained(TOKENIZER_PATH)   
+            iter_num = 0
+            insert_token_num_dynamic = 0
+            insert_token_num_original = insert_token_num
         ################
         
         while True:
@@ -866,6 +874,11 @@ class GenerationSemiAT(GenerationMixin):
                     break
 
             # prepare model inputs
+            if insert_waiting :
+                if iter_num % 2 == 0 :
+                    insert_token_num = insert_token_num_original                
+                else:
+                    insert_token_num = insert_token_num_dynamic
             model_inputs = self.prepare_inputs_for_generation(input_ids, insert_token_num, 
                                                               previous_same_sequences_length, insert_token_id, 
                                                               **model_kwargs)
@@ -942,8 +955,11 @@ class GenerationSemiAT(GenerationMixin):
             ## debug ##
             if VALEX_DEBUG :
                 iter_num = iter_num + 1
-                print(str(iter_num).zfill(3) + ":" + tokenizer.decode(input_ids[0][origional_prefix:previous_same_sequences_length+1]))
-                # print(input_ids[0][(origional_prefix):].to('cpu').numpy())
+                if WATCH_TOKEN :
+                    print(str(iter_num).zfill(3) + ":" + str(input_ids[0][origional_prefix:previous_same_sequences_length+1].tolist()))
+                else:
+                    print(str(iter_num).zfill(3) + ":" + tokenizer.decode(input_ids[0][origional_prefix:previous_same_sequences_length+1]))
+                    
             ###################
             
             if streamer is not None:
@@ -977,12 +993,14 @@ class GenerationSemiAT(GenerationMixin):
 
             if this_peer_finished and not synced_gpus:
                 if VALEX_DEBUG :
-                    print_debug_msg(
-                        tokenizer.decode(input_ids[0][:origional_prefix]),
-                        tokenizer.decode(input_ids[0][origional_prefix:previous_same_sequences_length+1]),
-                        len(input_ids[0][origional_prefix:previous_same_sequences_length+1]),
-                        iter_num,
-                    )                    
+                    print_each_output(
+                        tokenizer = tokenizer,
+                        input_ids = input_ids[0][:origional_prefix],
+                        output = input_ids[0][origional_prefix:previous_same_sequences_length+1],
+                        tot_tokens = len(input_ids[0][origional_prefix:previous_same_sequences_length+1]),
+                        tot_iter_num = iter_num,
+                    )               
+                
                     # print("=====================Final============================================")
                     # print("The Input : ")
                     # print(tokenizer.decode(input_ids[0][:origional_prefix]))
@@ -1000,7 +1018,8 @@ class GenerationSemiAT(GenerationMixin):
         if return_dict_in_generate:
             if self.config.is_encoder_decoder:
                 return GreedySearchEncoderDecoderOutput(
-                    sequences=input_ids,
+                    # sequences=input_ids,
+                    sequences=input_ids[0][origional_prefix:previous_same_sequences_length+1],
                     scores=scores,
                     encoder_attentions=encoder_attentions,
                     encoder_hidden_states=encoder_hidden_states,
@@ -1011,14 +1030,16 @@ class GenerationSemiAT(GenerationMixin):
                 )
             else:
                 return GreedySearchDecoderOnlyOutput(
-                    sequences=input_ids,
+                    sequences=input_ids[0][origional_prefix:previous_same_sequences_length+1],
+                    # sequences=input_ids,
                     scores=scores,
                     attentions=decoder_attentions,
                     hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
         else:
-            return input_ids
+            # return input_ids
+            return input_ids[0][origional_prefix:previous_same_sequences_length+1],
 
 
 
@@ -1176,7 +1197,7 @@ class GenerationSemiAT(GenerationMixin):
 
         this_peer_finished = False  # used by synced_gpus only
         if VALEX_DEBUG :
-            tokenizer = LlamaTokenizer.from_pretrained("/work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss")           
+            tokenizer = LlamaTokenizer.from_pretrained(TOKENIZER_PATH)       
             iter_num = 0
             origional_prefix = input_ids.shape[1]
         while True:
@@ -1247,8 +1268,11 @@ class GenerationSemiAT(GenerationMixin):
             ## debug ##
             if VALEX_DEBUG :
                 iter_num = iter_num + 1
-                print(str(iter_num).zfill(3) + ":" + tokenizer.decode(input_ids[0][origional_prefix:]))
-
+                if WATCH_TOKEN :
+                    print(str(iter_num).zfill(3) + ":" + str(input_ids[0][origional_prefix:].tolist()))
+                else:
+                    print(str(iter_num).zfill(3) + ":" + tokenizer.decode(input_ids[0][origional_prefix:]))
+                    
             # if eos_token was found in one sentence, set sentence to finished
             if eos_token_id_tensor is not None:
                 unfinished_sequences = unfinished_sequences.mul(
@@ -1265,12 +1289,19 @@ class GenerationSemiAT(GenerationMixin):
 
             if this_peer_finished and not synced_gpus:
                 if VALEX_DEBUG :
-                    print_debug_msg(
-                        tokenizer.decode(input_ids[0][:origional_prefix]),
-                        tokenizer.decode(input_ids[0][origional_prefix:]),
-                        len(input_ids[0][origional_prefix:]),
-                        iter_num,
-                    )
+                    print_each_output(
+                        tokenizer = tokenizer,
+                        input_ids = input_ids[0][:origional_prefix],
+                        output = input_ids[0][origional_prefix:],
+                        tot_tokens = len(input_ids[0][origional_prefix:]),
+                        tot_iter_num = iter_num,
+                    )                    
+                    # print_each_output(
+                    #     tokenizer.decode(input_ids[0][:origional_prefix]),
+                    #     tokenizer.decode(input_ids[0][origional_prefix:]),
+                    #     len(input_ids[0][origional_prefix:]),
+                    #     iter_num,
+                    # )
                     # print("=====================Final============================================")
                     # print("===The Input : ")
                     # print(tokenizer.decode(input_ids[0][:origional_prefix]))
@@ -1287,7 +1318,8 @@ class GenerationSemiAT(GenerationMixin):
         if return_dict_in_generate:
             if self.config.is_encoder_decoder:
                 return GreedySearchEncoderDecoderOutput(
-                    sequences=input_ids,
+                    # sequences=input_ids,
+                    sequences=input_ids[:,origional_prefix:],
                     scores=scores,
                     encoder_attentions=encoder_attentions,
                     encoder_hidden_states=encoder_hidden_states,
@@ -1298,22 +1330,33 @@ class GenerationSemiAT(GenerationMixin):
                 )
             else:
                 return GreedySearchDecoderOnlyOutput(
-                    sequences=input_ids,
+                    # sequences=input_ids,
+                    sequences=input_ids[:,origional_prefix:],
                     scores=scores,
                     attentions=decoder_attentions,
                     hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
         else:
-            return input_ids        
+            # return input_ids  
+            return input_ids[:,origional_prefix:]
         
         
-def print_debug_msg(input,output,tot_tokens,tot_iter_num):
-    if VALEX_DEBUG :
-        print("=====================Final============================================")
-        print("===The Input : ")
-        print(input)
-        print("===The Output : ")
-        print(output)
-        print("===Total Tokens /  Iter Num : ")
-        print(str(tot_tokens) + " / " + str(tot_iter_num))       
+def print_each_output(tokenizer, input_ids,output,tot_tokens,tot_iter_num):
+    if tokenizer is not None :
+        input = tokenizer.decode(input_ids)
+        output = tokenizer.decode(output)
+    else:
+        input = input_ids
+        output = output
+        
+    tot_tokens = tot_tokens
+    tot_iter_num = tot_iter_num         
+
+    print("==========================Input==========================================")
+    print(input)
+    print("==========================Output=========================================")
+    print(output)
+    print("==========================Total Tokens/Iter Num==========================")
+    print(str(tot_tokens) + " / " + str(tot_iter_num) + " = " + str(tot_tokens/tot_iter_num))       
+    

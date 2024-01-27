@@ -43,7 +43,32 @@
 #        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WoSeqloss \
 #        /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM       
 
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WiSeqloss \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss \
+#        /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM    
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss         
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss         
+
 python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-       /work/valex1377/semi_at_llama/model_outputs/KD_ft_b1_WoKLDiv_WiSeqloss \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b1_WoKLDiv_WiSeqloss \
-       /work/valex1377/semi_at_llama/model_outputs/LlamaSemiATForCausalLM    
+       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss        
+
+python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
+
+python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        

@@ -22,9 +22,25 @@
 # --more_step 0 \
 # --result_file_prefix _special_ufixed-prompt_up1
 
+# python  inference_semi_at.py \
+#          --dataset alpaca_dataset \
+#          --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM \
+#          --insert_token_num 1 \
+#          --insert_token_id 32000 \
+#          --use_cache \
+
 python  inference_semi_at.py \
-         --dataset alpaca_dataset \
-         --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM \
+         --dataset iwslt2017deennat_dataset \
+         --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen \
          --insert_token_num 1 \
          --insert_token_id 32000 \
          --use_cache \
+        #  --insert_waiting \
+        #  --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM \
+        # --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss \
+        # --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum \
+        # --model_name /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen \
+        #  --result_folder iwslt2017deen \
+        #  --dataset alpaca_dataset \
+        #  --dataset samsum_dataset \
+        #  --dataset iwslt2017deennat_dataset \

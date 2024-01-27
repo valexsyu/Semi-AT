@@ -72,6 +72,8 @@ class SemiATGenerationConfig(GenerationConfig):
         self.dataset_split = kwargs.pop("dataset_split", "test") 
         self.insert_token_id = kwargs.pop("insert_token_id", 0) 
         self.max_new_tokens = kwargs.pop("max_new_tokens", 400) 
+        self.quantization = kwargs.pop("quantization", False) 
+        self.insert_waiting = kwargs.pop("insert_waiting", False) 
         
     
     

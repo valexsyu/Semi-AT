@@ -20,6 +20,7 @@ class samsum_dataset:
     train_split: str = "train"
     valid_split: str = "validation"
     test_split: str = "test"
+    result_folder: str = None  
     
     
 
@@ -29,4 +30,15 @@ class alpaca_dataset:
     train_split: str = "train"
     valid_split: str = "validation"
     test_split: str = "test"
-    data_path: str = "/work/valex1377/semi_at_llama/kd_datasets/alpaca_data_en_52k.json"    
+    data_path: str = "/work/valex1377/semi_at_llama/kd_datasets/alpaca_data_en_52k.json"   
+    result_folder: str = None  
+    
+@dataclass
+class iwslt2017deennat_dataset:
+    dataset: str =  "iwslt2017deen_dataset"
+    train_split: str = "train"
+    valid_split: str = "validation"
+    test_split: str = "test"   
+    src: str = 'de'
+    tgt: str = 'en'   
+    result_folder: str = None       

@@ -11,6 +11,8 @@ from kd_datasets import (
     get_kd_dataset,
     get_samsum_dataset,
     get_alpaca_dataset,
+    get_iwslt17deen_dataset,
+    
 )
 
 
@@ -56,6 +58,7 @@ DATASET_PREPROC = {
     "kd_dataset": get_kd_dataset,
     "samsum_dataset": get_samsum_dataset,
     "alpaca_dataset" : get_alpaca_dataset,
+    "iwslt2017deennat_dataset" : get_iwslt17deen_dataset,
 }
 
 

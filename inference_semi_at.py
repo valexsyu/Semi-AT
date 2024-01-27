@@ -2,6 +2,7 @@
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
 import os
+import sys
 from pkg_resources import packaging
 
 import fire
@@ -104,17 +105,38 @@ def main(**kwargs):
         drop_last=True,
         collate_fn=default_data_collator,
     )    
-  
+
+    if dataset_config.result_folder is not None:
+        result_path = os.path.join(inference_config.model_name, dataset_config.result_folder)
+        os.makedirs(result_path, exist_ok=True)
+        output_path = os.path.join(
+            result_path,
+            "generate-{}.txt".format(inference_config.dataset_split),
+        )
+        with open(output_path, "w", buffering=1, encoding="utf-8") as h:
+            # Start the training process
+            results = inference_semi_at(
+                approx_model,
+                tokenizer,
+                test_dataloader,
+                inference_config,
+                h,
+                kwargs,
+            )
+    else:
+        results = inference_semi_at(
+            approx_model,
+            tokenizer,
+            test_dataloader,
+            inference_config,
+            None,#sys.stdout,
+            kwargs,
+        )        
+        
+        
   
     
-    # Start the training process
-    results = inference_semi_at(
-        approx_model,
-        tokenizer,
-        test_dataloader,
-        inference_config,
-        kwargs,
-    )
+
 
 
 if __name__ == "__main__":
