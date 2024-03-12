@@ -50,6 +50,8 @@ from configs import SemiATGenerationConfig as INFERENCE_CONFIG
 from dataclasses import dataclass, asdict
 
 from semi_at_model import LlamaSemiATForCausalLM
+from collections import OrderedDict
+import gc
 
 
 def main(**kwargs):
@@ -58,13 +60,57 @@ def main(**kwargs):
     # Set the seeds for reproducibility
     torch.cuda.manual_seed(inference_config.seed)
     torch.manual_seed(inference_config.seed)
-    
+
     approx_model = LlamaSemiATForCausalLM.from_pretrained(
         inference_config.model_name,
         load_in_8bit=True if inference_config.quantization else None,
         device_map="auto" if inference_config.quantization else None,
         use_cache=inference_config.use_cache,
     )
+    
+    # approx_model = LlamaForCausalLM.from_pretrained(
+    #     inference_config.model_name,
+    #     load_in_8bit=True if inference_config.quantization else None,
+    #     device_map="auto" if inference_config.quantization else None,
+    #     use_cache=inference_config.use_cache,
+    # )     
+
+    if inference_config.add_diff_para:
+        if inference_config.chat_model_path is not None and inference_config.no_chat_model_path is not None:
+            chat_model = LlamaSemiATForCausalLM.from_pretrained(inference_config.chat_model_path)
+            no_chat_model = LlamaSemiATForCausalLM.from_pretrained(inference_config.no_chat_model_path)
+            # Get the state dictionaries
+            chat_model_state_dict = chat_model.state_dict()
+            no_chat_model_state_dict = no_chat_model.state_dict()
+
+            # Calculate the difference between the parameters
+            diff_state_dict = OrderedDict()
+            for param_tensor in chat_model_state_dict:
+                if param_tensor in no_chat_model_state_dict:
+                    diff_state_dict[param_tensor] = chat_model_state_dict[param_tensor] - no_chat_model_state_dict[param_tensor]
+                    
+            os.makedirs(os.path.dirname(inference_config.delta_para_path), exist_ok=True)        
+            torch.save(diff_state_dict, inference_config.delta_para_path)
+            
+            # Delete the models
+            del chat_model
+            del no_chat_model
+
+            # Collect any remaining garbage
+        else:
+            diff_state_dict = torch.load(inference_config.delta_para_path)
+            
+        # Add the difference to the parameters of approx_model
+        approx_model_state_dict = approx_model.state_dict()
+        for param_tensor in diff_state_dict:
+            if param_tensor in approx_model_state_dict:
+                approx_model_state_dict[param_tensor] += diff_state_dict[param_tensor]
+
+        # Update the parameters of approx_model
+        approx_model.load_state_dict(approx_model_state_dict)    
+        del diff_state_dict
+        gc.collect()                        
+                
 
     # Load the tokenizer and add special tokens
     tokenizer = LlamaTokenizer.from_pretrained(inference_config.model_name)
@@ -107,7 +153,7 @@ def main(**kwargs):
     )    
 
     if dataset_config.result_folder is not None:
-        result_path = os.path.join(inference_config.model_name, dataset_config.result_folder)
+        result_path = os.path.join(inference_config.model_name, dataset_config.dataset, dataset_config.result_folder)
         os.makedirs(result_path, exist_ok=True)
         output_path = os.path.join(
             result_path,

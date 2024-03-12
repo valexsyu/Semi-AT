@@ -13,6 +13,7 @@ from transformers.generation.utils import (
 )
 import warnings
 import torch.distributed as dist
+from dataclasses import dataclass
 
 
 from transformers.generation.configuration_utils import GenerationConfig
@@ -27,13 +28,36 @@ from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 
 setattr(GenerationMode, 'GREEDY_SEARCH_SEMI_AT', 'greedy_search_semi_at')
 logger = logging.get_logger(__name__)
-VALEX_DEBUG = True
-WATCH_TOKEN = True
+VALEX_DEBUG = False
+WATCH_TOKEN = False
 ## debug ##
 if VALEX_DEBUG :
     from transformers import LlamaTokenizer
     TOKENIZER_PATH="/work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss"
 #########
+
+
+
+@dataclass
+class SemiATOutput(ModelOutput):
+    """
+    Base class for outputs of decoder-only generation models using greedy search.
+
+
+    Args:
+        sequences (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
+            The generated sequences. The second dimension (sequence_length) is either equal to `max_length` or shorter
+            if all batches finished early due to the `eos_token_id`.
+    """
+
+    sequences: torch.LongTensor = None
+    iter_num: int = None
+    tot_tokens: int = None
+
+
+
+
+
 
 class GenerationSemiAT(GenerationMixin):
     def _get_generation_mode(
@@ -855,11 +879,13 @@ class GenerationSemiAT(GenerationMixin):
             origional_prefix = input_ids.shape[1]
         # previous_sequences = None
         ## debug ##
+        iter_num = 0
+        insert_token_num_dynamic = 0
+        insert_token_num_original = insert_token_num        
+        
         if VALEX_DEBUG :
             tokenizer = LlamaTokenizer.from_pretrained(TOKENIZER_PATH)   
-            iter_num = 0
-            insert_token_num_dynamic = 0
-            insert_token_num_original = insert_token_num
+
         ################
         
         while True:
@@ -951,10 +977,9 @@ class GenerationSemiAT(GenerationMixin):
                 previous_same_sequences_length = previous_same_part_sequences.shape[-1]
             previous_sequences = input_ids
             
-            
+            iter_num = iter_num + 1
             ## debug ##
             if VALEX_DEBUG :
-                iter_num = iter_num + 1
                 if WATCH_TOKEN :
                     print(str(iter_num).zfill(3) + ":" + str(input_ids[0][origional_prefix:previous_same_sequences_length+1].tolist()))
                 else:
@@ -999,16 +1024,7 @@ class GenerationSemiAT(GenerationMixin):
                         output = input_ids[0][origional_prefix:previous_same_sequences_length+1],
                         tot_tokens = len(input_ids[0][origional_prefix:previous_same_sequences_length+1]),
                         tot_iter_num = iter_num,
-                    )               
-                
-                    # print("=====================Final============================================")
-                    # print("The Input : ")
-                    # print(tokenizer.decode(input_ids[0][:origional_prefix]))
-                    # print("The Output : ")
-                    # print(tokenizer.decode(input_ids[0][origional_prefix:previous_same_sequences_length+1]))
-                    # print("Total Tokens : ")
-                    # print(len(input_ids[0][origional_prefix:previous_same_sequences_length+1]))
-                    
+                    )                                 
                 break
 
         if streamer is not None:
@@ -1039,7 +1055,12 @@ class GenerationSemiAT(GenerationMixin):
                 )
         else:
             # return input_ids
-            return input_ids[0][origional_prefix:previous_same_sequences_length+1],
+            return SemiATOutput(
+                    sequences=input_ids[0][origional_prefix:previous_same_sequences_length+1],
+                    iter_num=iter_num,
+                    tot_tokens=len(input_ids[0][origional_prefix:previous_same_sequences_length+1]),
+            )        
+            # return input_ids[0][origional_prefix:previous_same_sequences_length+1],
 
 
 
@@ -1196,10 +1217,11 @@ class GenerationSemiAT(GenerationMixin):
         unfinished_sequences = torch.ones(input_ids.shape[0], dtype=torch.long, device=input_ids.device)
 
         this_peer_finished = False  # used by synced_gpus only
+        iter_num = 0
         if VALEX_DEBUG :
             tokenizer = LlamaTokenizer.from_pretrained(TOKENIZER_PATH)       
-            iter_num = 0
-            origional_prefix = input_ids.shape[1]
+            
+        origional_prefix = input_ids.shape[1]
         while True:
             if synced_gpus:
                 # Under synced_gpus the `forward` call must continue until all gpus complete their sequence.
@@ -1264,10 +1286,11 @@ class GenerationSemiAT(GenerationMixin):
             model_kwargs = self._update_model_kwargs_for_generation(
                 outputs, model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder
             )
+            
+            iter_num = iter_num + 1
 
             ## debug ##
             if VALEX_DEBUG :
-                iter_num = iter_num + 1
                 if WATCH_TOKEN :
                     print(str(iter_num).zfill(3) + ":" + str(input_ids[0][origional_prefix:].tolist()))
                 else:
@@ -1296,22 +1319,8 @@ class GenerationSemiAT(GenerationMixin):
                         tot_tokens = len(input_ids[0][origional_prefix:]),
                         tot_iter_num = iter_num,
                     )                    
-                    # print_each_output(
-                    #     tokenizer.decode(input_ids[0][:origional_prefix]),
-                    #     tokenizer.decode(input_ids[0][origional_prefix:]),
-                    #     len(input_ids[0][origional_prefix:]),
-                    #     iter_num,
-                    # )
-                    # print("=====================Final============================================")
-                    # print("===The Input : ")
-                    # print(tokenizer.decode(input_ids[0][:origional_prefix]))
-                    # print("===The Output : ")
-                    # print(tokenizer.decode(input_ids[0][origional_prefix:]))
-                    # print("===Total Tokens /  Iter Num : ")
-                    # print(str(len(input_ids[0][origional_prefix:])) + " / " + str(iter_num))
-            
                 break
-
+        
         if streamer is not None:
             streamer.end()
 
@@ -1339,7 +1348,14 @@ class GenerationSemiAT(GenerationMixin):
                 )
         else:
             # return input_ids  
-            return input_ids[:,origional_prefix:]
+            
+           
+            return SemiATOutput(
+                    sequences=input_ids[0][origional_prefix:],
+                    iter_num=iter_num,
+                    tot_tokens=len(input_ids[0][origional_prefix:]),
+            )
+            # return input_ids[:,origional_prefix:]
         
         
 def print_each_output(tokenizer, input_ids,output,tot_tokens,tot_iter_num):

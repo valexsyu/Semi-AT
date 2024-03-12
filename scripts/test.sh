@@ -1,49 +1,16 @@
-# python finetuning_kd.py \
-#          --dataset kd_dataset \
-#          --model_name /work/valex1377/llama-nat/llama_model/7B-chat \
-#          --num_epochs 1 \
-#          --batch_size_training 3 \
-#          --gradient_accumulation_steps 1 \
-#          --batching_strategy padding \
-#          --insert_token_num 1 \
-#          --sequence_label_ingnore \
-#          --target_kldiv_loss_enable \
+max_tokens_list=(800)
 
 
-# ## fsdp + lora
-# torchrun --nnodes 1 --nproc_per_node 8 finetuning_kd.py \
-#          --dataset kd_dataset \
-#          --use_peft --peft_method lora \
-#          --enable_fsdp --pure_bf16 \
-#          --output_dir /work/valex1377/llama/PEFT/KD_lora_b3_WoKLDiv_WoSeqloss \
-#          --model_name /work/valex1377/llama-nat/llama_model/7B-chat \
-#          --num_epochs 1 \
-#          --batch_size_training 1 \
-#          --gradient_accumulation_steps 3 \
-#          --batching_strategy padding \
-#          --insert_token_num 1 \
-#          --sequence_label_ingnore \
-#          --target_kldiv_loss_enable \
-
-## fsdp + ft
-torchrun --nnodes 1 --nproc_per_node 8 finetuning_kd.py \
-         --dataset kd_dataset \
-         --enable_fsdp --pure_bf16 \
-         --dist_checkpoint_folder /work/valex1377/llama-nat/llama_model/KD_ft_b1_WiKLDiv_WoSeqloss \
-         --model_name /work/valex1377/llama-nat/llama_model/7B-chat \
-         --num_epochs 1 \
-         --batch_size_training 1 \
-         --gradient_accumulation_steps 3 \
-         --batching_strategy padding \
-         --insert_token_num 1 \
-         --sequence_label_ingnore \
-        #  --target_kldiv_loss_enable \         
-
-# torchrun --nnodes 1 --nproc_per_node 2  finetuning.py \
-#          --dataset samsum_dataset \
-#          --model_name /work/valex1377/llama-nat/llama_model/7B-chat \
-#          --num_epochs 1 \
-#          --enable_fsdp --pure_bf16 \
-#          --dist_checkpoint_folder /work/valex1377/llama-nat/llama_model/7B-chat-ttt \
-#          --batch_size_training 4 \        
+load_bits=8
+echo "=========================$load_bits bits==============================="
+for max_token in "${max_tokens_list[@]}"
+do
+    python /work/valex1377/semi_at_llama/eval_semiar_time.py \
+        --input "More than a million displaced Palestinians - about half of the Strip's population - are " \
+        --target_model_name /work/valex1377/LLMSpeculativeSampling/llama_model/llama-2-7b-chat \
+        --approx_model_name /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_20k_ft_b3_WoKLDiv_WiSeqloss_wochat \
+        -b \
+        --max_tokens $max_token \
+        --load_bits $load_bits 
+done
 

@@ -42,3 +42,32 @@ class iwslt2017deennat_dataset:
     src: str = 'de'
     tgt: str = 'en'   
     result_folder: str = None       
+    
+@dataclass
+class openwebtext_kd_20k_dataset:
+    dataset: str = "openwebtext_kd_20k_dataset"
+    train_split: str = "train"
+    valid_split: str = "validation"
+    test_split: str = "test"
+    data_path: str = "/work/valex1377/semi_at_llama/kd_datasets/openwebtext/train.json"   
+    result_folder: str = None   
+    
+@dataclass
+class openwebtext_kd_80k_dataset:
+    dataset: str = "openwebtext_kd_80k_dataset"
+    train_split: str = "train"
+    valid_split: str = "validation"
+    test_split: str = "test"
+    data_path: str = "/work/valex1377/semi_at_llama/kd_datasets/openwebtext/train-80k.json"   
+    result_folder: str = None        
+    data_num: int = 20000
+    
+    
+@dataclass
+class mt_bench_dataset:
+    dataset: str = "mt_bench_dataset"
+    train_split: str = "train"
+    valid_split: str = "validation"
+    test_split: str = "test"
+    data_path: str = "/work/valex1377/semi_at_llama/kd_datasets/mt_bench/question_single.json"   
+    result_folder: str = None        

@@ -1,0 +1,13 @@
+source $HOME/.zshrc 2>~/error_log.txt
+conda activate wa
+
+export OPENAI_API_KEY=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
+
+# curl https://api.openai.com/v1/models \
+#   -H "Authorization: Bearer $OPENAI_API_KEY" \
+#   -H "OpenAI-Organization: org-9VP7zbu5OprKdttIEI0m2wqX"
+
+
+python scripts/eval/gpt4_eval_mt_bench_single.py \
+    --key $OPENAI_API_KEY \
+    --model_A mt_bench_result/llama2-7B-chat \

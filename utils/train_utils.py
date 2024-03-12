@@ -73,14 +73,13 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
     checkpoint_times = []
     results = {}
     best_val_loss = float("inf")
+    if target_model is not None :
+        target_model.eval()
+        kl_div = nn.KLDivLoss(reduction="mean")    
     for epoch in range(train_config.num_epochs):
         epoch_start_time = time.perf_counter()
         with MemoryTrace() as memtrace:  # track the memory usage
             approx_model.train()
-            if target_model is not None :
-                target_model.eval()
-                kl_div = nn.KLDivLoss(reduction="mean")
-                
             total_loss = 0.0
             total_length = len(train_dataloader)//gradient_accumulation_steps
             pbar = tqdm(colour="blue", desc=f"Training Epoch: {epoch+1}", total=total_length, dynamic_ncols=True)
@@ -90,44 +89,57 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                         batch[key] = batch[key].to(local_rank)
                     else:
                         batch[key] = batch[key].to('cuda:0')
-                with torch.no_grad():
-                    input_noise_ids = inject_noise(batch['input_ids'],tokenizer,train_config.noise_rate)
-                    insert_tokens , insert_mask, insert_labels, insert_position = insert_semi_at_token(
-                                    input_noise_ids,
-                                    batch['input_ids'],
-                                    batch['attention_mask'], 
-                                    insert_token_id = train_config.semi_at_insert_token_id, 
-                                    pad_id = tokenizer.pad_token_id,
-                                    insert_token_num = train_config.insert_token_num,
-                                    position_ids = None,
-                                    sequence_label_ingnore = train_config.sequence_label_ingnore
-                    )
-                    if target_model is not None :
-                        with autocast():
-                            target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits [:-1] ## remove last one logit
+                with autocast():      
+                    with torch.no_grad():
+                        input_noise_ids = inject_noise(batch['input_ids'],tokenizer,train_config.noise_rate)
                         
-                        target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc) 
-
-                with autocast():                 
+                        insert_tokens , insert_mask, insert_labels, insert_position = insert_semi_at_token(
+                                        input_noise_ids,
+                                        batch['input_ids'],
+                                        batch['attention_mask'], 
+                                        insert_token_id = train_config.semi_at_insert_token_id, 
+                                        pad_id = tokenizer.pad_token_id,
+                                        insert_token_num = train_config.insert_token_num,
+                                        position_ids = None,
+                                        sequence_label_ingnore = train_config.sequence_label_ingnore
+                        )
+                                  
                     approx_output = approx_model(
                                         input_ids = insert_tokens,
                                         attention_mask = insert_mask,
                                         position_ids = insert_position, 
                                         labels = insert_labels,                       
                                         )       
-                if target_model is not None:
-                    approx_select_logits = approx_output.logits[insert_tokens != train_config.semi_at_insert_token_id,:]
-                    approx_output_logp = F.log_softmax(approx_select_logits.logits, dim=-1)      
-                    kl_loss = kl_div(approx_output_logp, target_ouptput_p)
+                    # if target_model is not None:
+                    #     approx_wo_insert_logits = approx_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit                    
+                    #     with torch.no_grad():
+                    #         target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit
+                    #         target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc)                             
+                        
 
-                    loss = kl_loss + approx_output.loss
-                else:
-                    loss = approx_output.loss 
-                loss = loss / gradient_accumulation_steps
-                total_loss += loss.detach().float()
+                    #     approx_wo_insert_lp = F.log_softmax(approx_wo_insert_logits, dim=-1)   
+                    #     kl_loss = kl_div(approx_wo_insert_lp, target_ouptput_p.detach()) 
+                    #     loss = kl_loss + approx_output.loss
+                    # else:
+                    #     loss = approx_output.loss 
+                    # loss = loss / gradient_accumulation_steps
                 if train_config.use_fp16:
                     # if fp16 is enabled, use gradient scaler to handle gradient update
+                    loss = approx_output.loss / gradient_accumulation_steps                         
                     scaler.scale(loss).backward()
+                    if target_model is not None:
+                        with autocast(): 
+                            approx_wo_insert_logits = approx_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit                    
+                            with torch.no_grad():
+                                target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit
+                                target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc)                             
+                            
+
+                            approx_wo_insert_lp = F.log_softmax(approx_wo_insert_logits, dim=-1)   
+                            kl_loss = kl_div(approx_wo_insert_lp, target_ouptput_p.detach()) 
+                            loss = kl_loss / gradient_accumulation_steps  
+                        scaler.scale(loss).backward()  
+                        total_loss += loss.detach().float()                         
                     if (step + 1) % gradient_accumulation_steps == 0 or step == train_config.train_data_num - 1:
                         scaler.step(optimizer)
                         scaler.update()
@@ -135,13 +147,45 @@ def train_kd(approx_model, target_model, train_dataloader,eval_dataloader, token
                         pbar.update(1)
                 else:
                     # regular backpropagation when fp16 is not used
+                    
+                    # if target_model is not None:
+                    #     approx_wo_insert_logits = approx_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit                    
+                    #     with torch.no_grad():
+                    #         target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit
+                    #         target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc)                             
+                        
+
+                    #     approx_wo_insert_lp = F.log_softmax(approx_wo_insert_logits, dim=-1)   
+                    #     kl_loss = kl_div(approx_wo_insert_lp, target_ouptput_p.detach()) 
+                    #     loss = kl_loss + approx_output.loss
+
+                    loss = approx_output.loss / gradient_accumulation_steps 
                     loss.backward()
+                    total_loss += loss.detach().float()
+
+                    if target_model is not None:
+                        with autocast(): 
+                            approx_wo_insert_logits = approx_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit                    
+                            with torch.no_grad():
+                                target_logits = target_model(batch['input_ids'],batch['attention_mask']).logits ## remove last one logit
+                                target_ouptput_p = F.softmax(target_logits, dim=-1).detach()  # size(batch,len,voc)                             
+                            
+
+                            approx_wo_insert_lp = F.log_softmax(approx_wo_insert_logits, dim=-1)   
+                            kl_loss = kl_div(approx_wo_insert_lp, target_ouptput_p.detach()) 
+                            loss = kl_loss / gradient_accumulation_steps  
+                        loss.backward()
+                        total_loss += loss.detach().float()                
+                        
+                        
                     if (step + 1) % gradient_accumulation_steps == 0 or step == train_config.train_data_num - 1:
                         optimizer.step()
                         optimizer.zero_grad()
                         pbar.update(1)
+                
+                total_loss += loss.detach().float()
 
-                pbar.set_description(f"Training Epoch: {epoch+1}/{train_config.num_epochs}, step {step}/{train_config.train_data_num} completed (loss: {loss.detach().float()})")
+                pbar.set_description(f"Training Epoch: {epoch+1}/{train_config.num_epochs}, step {step}/{len(train_dataloader)} completed (loss: {loss.detach().float()})")
             pbar.close()
 
         epoch_end_time = time.perf_counter()-epoch_start_time

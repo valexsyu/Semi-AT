@@ -78,6 +78,8 @@ def main(**kwargs):
     torch.cuda.manual_seed(train_config.seed)
     torch.manual_seed(train_config.seed)
     random.seed(train_config.seed)
+    
+
 
     if train_config.enable_fsdp:
         setup()
@@ -118,7 +120,7 @@ def main(**kwargs):
         # Load the tokenizer and add special tokens
     
     
-    
+
     tokenizer = LlamaTokenizer.from_pretrained(train_config.model_name, padding="max_length", truncation=True)       
     semi_at_insert_token_id = tokenizer.convert_tokens_to_ids('<mask>')
     update_config(train_config,**{"semi_at_insert_token_id":semi_at_insert_token_id})
@@ -277,6 +279,7 @@ def main(**kwargs):
     dataset_config.semi_at_insert_token_id = semi_at_insert_token_id
 
      # Load and preprocess the dataset for training and validation
+     
     dataset_train = get_preprocessed_dataset(
         tokenizer,
         dataset_config,

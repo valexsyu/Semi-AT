@@ -12,6 +12,9 @@ from kd_datasets import (
     get_samsum_dataset,
     get_alpaca_dataset,
     get_iwslt17deen_dataset,
+    get_openwebtext_kd_20k_dataset,
+    get_openwebtext_kd_80k_dataset,
+    get_mt_bench_dataset,
     
 )
 
@@ -59,6 +62,9 @@ DATASET_PREPROC = {
     "samsum_dataset": get_samsum_dataset,
     "alpaca_dataset" : get_alpaca_dataset,
     "iwslt2017deennat_dataset" : get_iwslt17deen_dataset,
+    "openwebtext_kd_20k_dataset" : get_openwebtext_kd_20k_dataset,
+    "openwebtext_kd_80k_dataset" : get_openwebtext_kd_80k_dataset,
+    "mt_bench_dataset" : get_mt_bench_dataset,
 }
 
 

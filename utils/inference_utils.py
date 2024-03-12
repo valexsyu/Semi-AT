@@ -106,8 +106,8 @@ def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config
     results = {}
     output_token = []
     approx_model.eval()
-    pbar = tqdm(test_dataloader,colour="blue", desc=f"Testing num: ", total=len(test_dataloader), dynamic_ncols=True)
-    for step, batch in enumerate(test_dataloader):    
+    # pbar = tqdm(test_dataloader,colour="blue", desc=f"Testing num: ", total=len(test_dataloader), dynamic_ncols=True)
+    for step, batch in enumerate(tqdm(test_dataloader,colour="blue", desc=f"Testing num: ", total=len(test_dataloader), dynamic_ncols=True)):    
         if batch['labels'] is not None:
             batch_labels = batch['labels']
             batch.pop("labels",None)
@@ -120,13 +120,19 @@ def inference_semi_at(approx_model, tokenizer, test_dataloader, inference_config
             outputs = approx_model.generate(**batch, generation_config=inference_config,streamer=streamer, 
                                             max_new_tokens=inference_config.max_new_tokens) 
 
-            
         epoch_end_time = time.perf_counter()-epoch_start_time  
-        breakpoint()
+        epoch_times.append(epoch_end_time) 
+        # print("Time: {}".format(epoch_end_time))
         if result_path is not None:
-            for _,(tgt_sent,hyp_sent) in enumerate(zip(batch_labels, outputs.tolist())):
+            for _,(tgt_sent,hyp_sent) in enumerate(zip(batch_labels, [outputs["sequences"].tolist()])):
                 print("T-{}".format(tokenizer.decode((tgt_sent),skip_special_tokens=True)), file=result_path)  
-                print("H-{}".format(tokenizer.decode(hyp_sent,skip_special_tokens=True)), file=result_path)                  
+                print("H-{}".format(tokenizer.decode(hyp_sent,skip_special_tokens=True)), file=result_path)  
+                print("E-{}".format(epoch_end_time),file=result_path)
+                print("I-{}".format(outputs["iter_num"]),file=result_path)
+                print("N-{}".format(outputs["tot_tokens"]),file=result_path)
+        
+    avg_epoch_time = sum(epoch_times)/ len(epoch_times)     
+    print("Average Epoch Time:{}".format(avg_epoch_time))
     return results
 
 

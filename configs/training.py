@@ -31,5 +31,6 @@ class train_config(TRAIN_CONFIG):
     save_model: bool = True
     dist_checkpoint_root_folder: str="/work/valex1377/semi_at_llama/llama_model/KD_ft_b1_WoKLDiv_WoSeqloss_1" # will be used if using FSDP
     initialize_llamasemiat: bool = False
+    debug: bool = False 
     
 

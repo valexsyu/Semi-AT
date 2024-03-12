@@ -58,17 +58,73 @@
 #        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum \
 #        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss         
 
-python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss        
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss        
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
+
+
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_iwslt17deen_woself \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
+
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_20k_ft_b3_WoKLDiv_WiSeqloss_wochat_2e \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_20k_ft_b3_WoKLDiv_WiSeqloss_wochat_2e \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat
+
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_20k_ft_b3_WoKLDiv_WiSeqloss_1e \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_20k_ft_b3_WoKLDiv_WiSeqloss_1e \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM
+
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_20k_ft_b3_WoKLDiv_WiSeqloss_nochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_20k_ft_b3_WoKLDiv_WiSeqloss_nochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_40k_ft_b3_WoKLDiv_WiSeqloss_nochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_40k_ft_b3_WoKLDiv_WiSeqloss_nochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat       
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_60k_ft_b3_WoKLDiv_WiSeqloss_wochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_60k_ft_b3_WoKLDiv_WiSeqloss_wochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat
+
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_80k_ft_b3_WoKLDiv_WiSeqloss_wochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_80k_ft_b3_WoKLDiv_WiSeqloss_wochat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat
+
+
+       
+
+# python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
+#        /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_20k_ft_b3_WiKLDiv_WiSeqloss_WoChat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_20k_ft_b3_WiKLDiv_WiSeqloss_WoChat \
+#        /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat
+
+
 
 python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_alpaca_dataset_woself \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
-
-python /work/valex1377/semi_at_llama/llama_recipes/src/llama_recipes/inference/checkpoint_converter_fsdp_hf.py \
-       /work/valex1377/semi_at_llama/llama_model/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_ft_b3_WoKLDiv_WiSeqloss_ft_b3_samsum_woself \
-       /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM        
+       /work/valex1377/semi_at_llama/llama_model/KD_opentext_gen_80k_40k_ft_b3_WiKLDiv_WiSeqloss_WoChat_WoNoise \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/KD_opentext_gen_80k_40k_ft_b3_WiKLDiv_WiSeqloss_WoChat_WoNoise \
+       /work/valex1377/semi_at_llama/llama_model/models_hf/LlamaSemiATForCausalLM_wochat

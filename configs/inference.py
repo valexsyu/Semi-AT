@@ -74,6 +74,13 @@ class SemiATGenerationConfig(GenerationConfig):
         self.max_new_tokens = kwargs.pop("max_new_tokens", 400) 
         self.quantization = kwargs.pop("quantization", False) 
         self.insert_waiting = kwargs.pop("insert_waiting", False) 
+        self.add_diff_para = kwargs.pop("add_diff_para", False) 
+        self.no_chat_model_path = kwargs.pop("no_chat_model_path", None) 
+        self.chat_model_path = kwargs.pop("chat_model_path", None) 
+        self.delta_para_path = kwargs.pop("delta_para_path", None) 
+        self.debug = kwargs.pop("debug", False) 
+        
+        
         
     
     
